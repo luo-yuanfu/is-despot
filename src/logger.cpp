@@ -221,7 +221,8 @@ void Logger::InitRound(State* state) {
 }
 
 double Logger::EndRound() {
-	if (!Globals::config.silence && out_) {
+	//if (!Globals::config.silence && out_) {
+	if (out_) {
 		*out_ << "Total discounted reward = " << total_discounted_reward_
 				<< endl << "Total undiscounted reward = "
 				<< total_undiscounted_reward_ << endl;
