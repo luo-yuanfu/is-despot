@@ -149,11 +149,10 @@ void ParticleBelief::Update(ACT_TYPE action, OBS_TYPE obs) {
 		}
 
 		//Update total weight so that effective number of particles are computed correctly
-		total_weight = 0;
-                for (int i = 0; i < particles_.size(); i++) {
-		    State* particle = particles_[i];
-                    total_weight = total_weight + particle->weight;
-                }
+        total_weight = 0;
+        for (int i = 0; i < particles_.size(); i++)
+            total_weight += particles_[i]->weight;
+
 	}
 
 
@@ -201,40 +200,88 @@ string ParticleBelief::text() const {
 	return oss.str();
 }
 
+
 vector<State*> ParticleBelief::Sample(int num, vector<State*> particles,
 	const DSPOMDP* model) {
+	
+	if(Globals::config.use_is_despot) {
+		double unit = 1.0 / num;
+		double mass = Random::RANDOM.NextDouble(0, unit);
+		int pos = 0;
 
-	double unit = 1.0 / num;
-	double mass = Random::RANDOM.NextDouble(0, unit);
-	int pos = 0;
-	double cur = particles[0]->weight;
-	vector<State*> sample;
-	for (int i = 0; i < num; i++) {
-		while (mass > cur) {
-			pos++;
-			if (pos == particles.size())
-				pos = 0;
+		vector <double> importance_weight = model->ImportanceWeight(particles);
 
-			cur += particles[pos]->weight;
+		double cur = importance_weight[0];
+
+		double total_weight=0;
+
+		vector<State*> sample;
+		for (int i = 0; i < num; i++) {
+			while (mass > cur) {
+				pos++;
+				if (pos == particles.size())
+					pos = 0;
+
+				cur += importance_weight[pos];
+			}
+
+			assert(importance_weight[pos]!=0);
+			mass += unit;
+
+			State* particle = model->Copy(particles[pos]);
+			particle->weight = unit*(particles[pos]->weight/importance_weight[pos]);
+			total_weight += particle->weight;
+			sample.push_back(particle);
 		}
 
-		mass += unit;
+		for (int i=0; i<num; i++)
+			sample[i]->weight /= total_weight;
 
-		State* particle = model->Copy(particles[pos]);
-		particle->weight = unit;
-		sample.push_back(particle);
+		random_shuffle(sample.begin(), sample.end());
+
+		logd << "[Belief::Sample] Sampled " << sample.size() << " particles"
+			<< endl;
+		for (int i = 0; i < sample.size(); i++) {
+			logv << " " << i << " = " << *sample[i] << endl;
+		}
+
+		return sample;
 	}
+	else{
+		double unit = 1.0 / num;
+		double mass = Random::RANDOM.NextDouble(0, unit);
+		int pos = 0;
+		double cur = particles[0]->weight;
 
-	random_shuffle(sample.begin(), sample.end());
+		vector<State*> sample;
+		for (int i = 0; i < num; i++) {
+			while (mass > cur) {
+				pos++;
+				if (pos == particles.size())
+					pos = 0;
 
-	logd << "[ParticleBelief::Sample] Sampled " << sample.size() << " particles"
-		<< endl;
-	for (int i = 0; i < sample.size(); i++) {
-		logv << " " << i << " = " << *sample[i] << endl;
+				cur += particles[pos]->weight;
+			}
+
+			mass += unit;
+
+			State* particle = model->Copy(particles[pos]);
+			particle->weight = unit;
+			sample.push_back(particle);
+		}
+
+		random_shuffle(sample.begin(), sample.end());
+
+		logd << "[Belief::Sample] Sampled " << sample.size() << " particles"
+			<< endl;
+		for (int i = 0; i < sample.size(); i++) {
+			logv << " " << i << " = " << *sample[i] << endl;
+		}
+
+		return sample;
 	}
-
-	return sample;
 }
+
 
 vector<State*> ParticleBelief::Resample(int num, const vector<State*>& belief,
 	const DSPOMDP* model, History history, int hstart) {
