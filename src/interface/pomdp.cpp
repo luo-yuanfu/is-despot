@@ -87,6 +87,28 @@ bool DSPOMDP::Step(State& state, double random_num, ACT_TYPE action,
 	return Step(state, random_num, action, reward, obs);
 }
 
+bool DSPOMDP::ImportanceSamplingStep(State& state, double random_num, ACT_TYPE action,
+	double& reward, OBS_TYPE& obs) const{
+	return Step(state, random_num, action, reward, obs);
+}
+
+vector<double> DSPOMDP::ImportanceWeight(vector<State*> particles) const{
+	vector <double> importance_weight;
+	for(int i=0; i<particles.size();i++){
+		importance_weight.push_back(particles[i]->weight);
+	}
+
+	return importance_weight;
+}
+
+void DSPOMDP::PrintParticles(const vector<State*> particles, ostream& out) const{
+}
+
+vector<double> DSPOMDP::Feature(const State& state) const{
+	vector<double> v;
+	return v;
+}
+
 State* DSPOMDP::CreateStartState(std::string type) const{
 	cerr << "Unimplemented function: DSPOMDP::CreateStartState" << endl;
 	exit(1);

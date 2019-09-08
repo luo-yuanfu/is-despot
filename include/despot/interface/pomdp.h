@@ -141,6 +141,37 @@ public:
 	virtual bool Step(State& state, ACT_TYPE action, double& reward,
 		OBS_TYPE& obs) const;
 
+	/**
+	 * [Optional]
+	 * Determistic simulative model using importance sampling for POMDP. It will call Step() function if the derived class does not override it.
+	 * Returns whether the terminal state has been reached
+	 * @param state      Current state of the world in a scenario
+	 * @param random_num Random number in a scenario
+	 * @param action     Action to be taken
+	 * @param reward     Reward received after taking action from state
+	 * @param obs        Observation received after taking action
+	 */
+	virtual bool ImportanceSamplingStep(State& state, double random_num, ACT_TYPE action,
+		double& reward, OBS_TYPE& obs) const;
+
+	/**
+	 * [Optional]
+	 * return features for learning importance distribution.
+	 */
+	virtual std::vector<double> Feature(const State& state) const;
+
+
+	/**
+	 * Returns the importance weight for the input particle; The weight is problem 
+	 * specified. In this class, it directly returns the original weight of the 
+	 * input particle, so that it can be treated as it does not use the importance
+	 * weight when its child class does not implement this virtual function.
+	 */
+	//virtual double ImportanceWeight(State* particle, double total_weight, int particle_size);
+	 virtual std::vector<double> ImportanceWeight(std::vector<State*> particles) const;
+
+
+
 	/* ========================================================================
 	 * Action
 	 * ========================================================================*/
@@ -283,6 +314,13 @@ public:
 	 */
 	virtual void PrintBelief(const Belief& belief,
 		std::ostream& out = std::cout) const = 0;
+
+
+	/**
+	 * [Optional]
+	 * To print the particles, for testing purpose
+	 */
+	 virtual void PrintParticles(const std::vector<State*> particles, std::ostream& out = std::cout) const;
 
 	/* ========================================================================
 	 * Memory management.
