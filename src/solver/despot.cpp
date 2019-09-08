@@ -17,6 +17,18 @@ DESPOT::DESPOT(const DSPOMDP* model, ScenarioLowerBound* lb, ScenarioUpperBound*
 }
 
 DESPOT::~DESPOT() {
+	if(lower_bound_!=NULL) {
+		delete lower_bound_;
+		lower_bound_ = NULL;
+	}
+	if(upper_bound_!=NULL) {
+		delete upper_bound_;
+		upper_bound_ = NULL;
+	}
+	if(model_!=NULL) {
+		delete model_;
+		model_ = NULL;
+	}
 }
 
 ScenarioLowerBound* DESPOT::lower_bound() const {
@@ -661,10 +673,13 @@ void DESPOT::Expand(QNode* qnode, ScenarioLowerBound* lb,
 
 		logd << " Before step: " << *copy << endl;
 
-		bool terminal = model->Step(*copy, streams.Entry(copy->scenario_id),
-			qnode->edge(), reward, obs);
+		bool terminal;
 
-		step_reward += reward * copy->weight;
+		if(Globals::config.use_is_despot) 
+			terminal = model->ImportanceSamplingStep(*copy, streams.Entry(copy->scenario_id), qnode->edge(), reward, obs);
+		else terminal = model->Step(*copy, streams.Entry(copy->scenario_id), qnode->edge(), reward, obs);
+
+		step_reward += reward * particle->weight;
 
 		logd << " After step: " << *copy << " " << (reward * copy->weight)
 			<< " " << reward << " " << copy->weight << endl;
@@ -675,6 +690,40 @@ void DESPOT::Expand(QNode* qnode, ScenarioLowerBound* lb,
 			model->Free(copy);
 		}
 	}
+
+	
+	if(Globals::config.use_is_despot && Globals::config.use_normalization) {// normalize the weight
+
+		//compute the weight of the parent
+		double parent_weight = parent -> Weight();
+
+		//compute the weight of the particles for qnode, i.e., the weight of the children
+		double children_weight = 0;
+		for (map<OBS_TYPE, vector<State*> >::iterator it = partitions.begin();
+			it != partitions.end(); it++) {
+			OBS_TYPE obs = it->first;
+			children_weight += partitions[obs][0]->Weight(partitions[obs]);
+		}
+		
+		double normization_constant;
+
+		normization_constant = (children_weight==0)? 1:parent_weight/children_weight;
+
+		if (normization_constant != 1){
+			for (map<OBS_TYPE, vector<State*> >::iterator it = partitions.begin();
+				it != partitions.end(); it++) {
+				OBS_TYPE obs = it->first;
+			
+				for(int i=0; i<partitions[obs].size(); i++){
+					partitions[obs][i]->weight = partitions[obs][i]->weight * normization_constant;
+				}
+			
+			}
+
+		}
+
+	}
+
 	step_reward = Globals::Discount(parent->depth()) * step_reward
 		- Globals::config.pruning_constant;//pruning_constant is used for regularization
 

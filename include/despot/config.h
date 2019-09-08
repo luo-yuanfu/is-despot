@@ -18,6 +18,10 @@ struct Config {
 	int max_policy_sim_len; // Maximum number of steps for simulating the default policy
 	double noise;
 	bool silence;
+	bool use_is_despot;
+	bool use_normalization;
+	bool collect_data;
+
 
 	Config() :
 		search_depth(90),
@@ -31,7 +35,10 @@ struct Config {
 		default_action(""),
 		max_policy_sim_len(90),
 		noise(0.1),
-		silence(false) {
+		silence(false),				
+		use_is_despot(true),
+		use_normalization(true),
+		collect_data(false) {
 	}
 };
 
