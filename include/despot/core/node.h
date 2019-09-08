@@ -72,6 +72,9 @@ public:
 	void upper_bound(double value);
 	double upper_bound() const;
 
+	int particle_num();
+
+
 	bool IsLeaf();
 
 	void Add(double val);
