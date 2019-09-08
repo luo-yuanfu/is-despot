@@ -53,6 +53,9 @@ enum OptionIndex {
 	E_SERVER,
 	E_PORT,
 	E_LOG,
+	E_USE_IS_DESPOT,
+	E_USE_NORMALIZATION,
+	E_COLLECT_DATA,
 };
 
 option::Descriptor* BuildUsage(string lower_bounds_str,
@@ -122,6 +125,12 @@ const option::Descriptor usage[] =
 						"  \t--prior <arg>  \tPOMCP prior." },
 				{ E_PRIOR, 0, "", "world", option::Arg::Required,
 						"  \t--world <arg>  \tWorld type (pomdp, simulator, or real)." },
+				{ E_USE_IS_DESPOT, 0, "", "use_is_despot", option::Arg::Required,
+						"  \t--use_is_despot <arg>  \tUse importance sampling or not." },
+				{ E_USE_NORMALIZATION, 0, "", "use_normalization", option::Arg::Required,
+						"  \t--use_normalization <arg>  \tUse normalization for importance distribution or not." },
+				{ E_COLLECT_DATA, 0, "", "collect_data", option::Arg::Required,
+						"  \t--collect_data <arg>  \tCollect data for learning importance distribution or not." },
 				{ 0, 0, 0, 0, 0, 0 } };
 
 /* =============================================================================

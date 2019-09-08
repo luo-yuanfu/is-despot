@@ -86,10 +86,17 @@ option::Descriptor* BuildUsage(string lower_bounds_str,
 					{ E_SILENCE, 0, "", "silence", option::Arg::None,
 							"  \t--silence  \tReduce default output to minimal." },
 					{ E_SOLVER, 0, "", "solver", option::Arg::Required,
-							"  \t--solver <arg>  \t" }, { E_PRIOR, 0, "",
+							"  \t--solver <arg>  \t" }, 
+					{ E_PRIOR, 0, "",
 							"prior", option::Arg::Required,
-							"  \t--prior <arg>  \tPOMCP prior." }, { 0, 0, 0, 0,
-							0, 0 } };
+							"  \t--prior <arg>  \tPOMCP prior." }, 
+					{ E_USE_IS_DESPOT, 0, "", "use_is_despot", option::Arg::Required,
+						"  \t--use_is_despot <arg>  \tUse importance sampling or not. (default is true)" },
+					{ E_USE_NORMALIZATION, 0, "", "use_normalization", option::Arg::Required,
+						"  \t--use_normalization <arg>  \tUse normalization for importance distribution or not. (default is true)" },
+					{ E_COLLECT_DATA, 0, "", "collect_data", option::Arg::Required,
+						"  \t--collect_data <arg>  \tCollect data for learning importance distribution or not. (default is false)" }, 
+					{ 0, 0, 0, 0, 0, 0 } };
 	return usage;
 }
 
@@ -304,6 +311,32 @@ void PlannerBase::OptionParse(option::Option *options, int &num_runs,
 
 	if (options[E_SOLVER])
 		solver_type = options[E_SOLVER].arg;
+
+
+	if (options[E_USE_IS_DESPOT]){
+		string fal = "false";
+		if(fal.compare(options[E_USE_IS_DESPOT].arg)==0)
+			Globals::config.use_is_despot = false;
+		else 
+			Globals::config.use_is_despot = true;
+	}
+
+	if (options[E_USE_NORMALIZATION]){
+		string fal = "false";
+		if(fal.compare(options[E_USE_NORMALIZATION].arg)==0)
+			Globals::config.use_normalization = false;
+		else 
+			Globals::config.use_normalization = true;
+	}
+
+	if (options[E_COLLECT_DATA]){
+		string fal = "false";
+		if(fal.compare(options[E_COLLECT_DATA].arg)!=0)
+			Globals::config.collect_data = true;
+		else 
+			Globals::config.collect_data = false;
+	}
+	
 
 	int verbosity = 0;
 	if (options[E_VERBOSITY])
