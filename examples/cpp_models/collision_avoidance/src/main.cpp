@@ -1,6 +1,5 @@
+#include "collision_avoidance.h"
 #include <despot/planner.h>
-#include <despot/interface/pomdp.h>
-#include "tiger.h"
 
 using namespace despot;
 
@@ -10,7 +9,7 @@ public:
   }
  
   DSPOMDP* InitializeModel(option::Option* options) {
-    DSPOMDP* model = new Tiger();
+    DSPOMDP* model = new CollisionAvoidance();
     return model;
   }
   
