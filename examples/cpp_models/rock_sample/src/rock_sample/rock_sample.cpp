@@ -54,7 +54,7 @@ RockSample::RockSample(int size, int rocks) :
 
 	if(file.fail()) {
 		cout<<"fail to open sampling_weight file"<<endl;
-		cout<<"don't use importance sampling"<<endl;
+		cout<<"will not use importance sampling"<<endl;
 		for(int i=0; i<rocks+1; i++)
 			for(int j=0; j<size*2; j++)
 				for(int k=0; k<size*2; k++)

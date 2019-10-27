@@ -178,7 +178,6 @@ bool DeminingState::IsMineCell(int x, int y, int& index) const
 
 bool DeminingState::AllMinesClear()
 {
-	int clear_mine_num=0;
 	for(int i=0; i<mine_states_.size();i++)
 		if(mine_states_[i].reported==false) return false;
 	

@@ -7,6 +7,8 @@
 #include <despot/util/grid.h>
 #include <despot/core/particle_belief.h>
 
+using namespace std;
+
 namespace despot {
 
 /* ==============================================================================
@@ -50,6 +52,8 @@ class Pocman: public DSPOMDP {
 public:
 	virtual bool Step(State& state, double rand_num, ACT_TYPE action, double& reward,
 		OBS_TYPE& observation) const;
+	bool ImportanceSamplingStep(State& state, double rand_num, ACT_TYPE action, double& reward,
+    	OBS_TYPE& observation) const;
 	virtual void Validate(const State& state) const;
 	int NumActions() const;
 	virtual double ObsProb(OBS_TYPE obs, const State& state, ACT_TYPE action) const;
@@ -78,6 +82,7 @@ public:
 		std::ostream& out = std::cout) const;
 	void PrintBelief(const Belief& belief, std::ostream& out = std::cout) const;
 	virtual void PrintAction(ACT_TYPE action, std::ostream& out = std::cout) const;
+	vector<double> Feature(const State& state) const;
 
 	State* Allocate(int state_id, double weight) const;
 	virtual State* Copy(const State* particle) const;
@@ -102,11 +107,21 @@ public:
 	int power_num_steps_;
 	Coord NextPos(const Coord& from, int dir) const;
 
+	double sampling_weight_[16][35];
+
+	vector<double> ImportanceWeight(vector<State*> particles) const;
+
 private:
 	void MoveGhost(PocmanState& pocstate, int g, Random &random) const;
 	void MoveGhostAggressive(PocmanState& pocstate, int g, Random &random) const;
 	void MoveGhostDefensive(PocmanState& pocstate, int g, Random &random) const;
 	void MoveGhostRandom(PocmanState& pocstate, int g, Random &random) const;
+
+	double ISMoveGhost(PocmanState& pocstate, int g, Random &random) const;
+	double ISMoveGhostAggressive(PocmanState& pocstate, int g, Random &random) const;
+	double ISMoveGhostDefensive(PocmanState& pocstate, int g, Random &random) const;
+	double ISMoveGhostRandom(PocmanState& pocstate, int g, Random &random) const;
+
 	void NewLevel(PocmanState& pocstate) const;
 	int SeeGhost(const PocmanState& pocstate, ACT_TYPE action) const;
 	bool HearGhost(const PocmanState& pocstate) const;

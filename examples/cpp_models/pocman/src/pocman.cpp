@@ -307,6 +307,64 @@ Pocman::Pocman(int xsize, int ysize) :
 	// Can move W
 	// Smell food
 	// Hear ghost
+
+	if(Globals::config.use_is_despot == false){
+		cout<<"use_is_despot is set to false; will not use importance sampling"<<endl;
+		for(int i=0; i<16; i++)
+			for(int j=0; j<35; j++)
+				sampling_weight_[i][j]=1;
+		return;
+	}
+
+	ifstream file;
+	file.open("sampling_weight.dat", std::ifstream::in);
+	if(file.fail()) {
+		cout<<"fail to open sampling_weight.dat file"<<endl;
+		//exit(0);
+		cout<<"will not use importance sampling"<<endl;
+		for(int i=0; i<16; i++)
+			for(int j=0; j<35; j++)
+				sampling_weight_[i][j]=1;
+		return;
+	}
+
+	for(int i=0; i<16; i++)
+		for(int j=0; j<35; j++)
+			sampling_weight_[i][j]=0;
+
+	int p_step,m_dist; //power step, manhattan distance
+	double mean, std, ste, importance, global_importance;
+	while(file>>p_step>>m_dist>>mean>>std>>ste>>importance>>global_importance) {
+		sampling_weight_[p_step][m_dist]=importance;
+	}
+	
+	for(int i=0; i<16; i++)
+		for(int j=0; j<35; j++)	{
+			if(sampling_weight_[i][j]==0) {
+				if(j>0) sampling_weight_[i][j]=sampling_weight_[i][j-1];
+				else {
+					int next_j=j;
+					while(next_j!=35 && sampling_weight_[i][next_j]==0){
+						next_j++;
+					if(next_j!=35) sampling_weight_[i][j]=sampling_weight_[i][next_j];
+					}
+				}
+			}
+			if(sampling_weight_[i][j]==0) {
+				if(i>0) sampling_weight_[i][j]=sampling_weight_[i-1][j];
+				else {
+					int next_i=i;
+					while(next_i!=16 && sampling_weight_[next_i][j]==0){
+						next_i++;
+					if(next_i!=16)sampling_weight_[i][j]=sampling_weight_[next_i][j];
+					}
+				}
+			}
+			assert(sampling_weight_[i][j]!=0);
+			
+		}
+
+	file.close();
 }
 
 MicroPocman::MicroPocman() :
@@ -453,7 +511,64 @@ bool Pocman::Step(State& state, double rand_num, ACT_TYPE action, double& reward
 			pocstate.power_steps = power_num_steps_;
 		reward += reward_eat_food_;
 	}
+	return false;
+}
 
+bool Pocman::ImportanceSamplingStep(State& state, double rand_num, ACT_TYPE action, double& reward,
+    OBS_TYPE& observation) const{
+	Random random(rand_num);
+
+	double step_weight=1;
+	PocmanState& pocstate = static_cast<PocmanState&>(state);
+	reward = reward_default_;
+	observation = 0;
+
+	Coord newpos = NextPos(pocstate.pocman_pos, action);
+	if (newpos.x >= 0 && newpos.y >= 0)
+		pocstate.pocman_pos = newpos;
+	else
+		reward += reward_hit_wall_;
+
+	if (pocstate.power_steps > 0)
+		pocstate.power_steps--;
+
+	int hitGhost = -1;
+	for (int g = 0; g < num_ghosts_; g++) {
+		if (pocstate.ghost_pos[g] == pocstate.pocman_pos)
+			hitGhost = g;
+		step_weight*=ISMoveGhost(pocstate, g, random);
+		if (pocstate.ghost_pos[g] == pocstate.pocman_pos)
+			hitGhost = g;
+	}
+
+	if (hitGhost >= 0) {
+		if (pocstate.power_steps > 0) {
+			reward += reward_eat_ghost_;
+			pocstate.ghost_pos[hitGhost] = ghost_home_;
+			pocstate.ghost_dir[hitGhost] = -1;
+		} else {
+			reward += reward_die_;
+			return true;
+		}
+	}
+
+	observation = MakeObservations(pocstate);
+
+	int pocIndex = maze_.Index(pocstate.pocman_pos);
+	if (pocstate.food[pocIndex]) {
+		pocstate.food[pocIndex] = false;
+		pocstate.num_food--;
+		if (pocstate.num_food == 0) {
+			reward += reward_clear_level_;
+			return true;
+		}
+		if (CheckFlag(maze_(pocstate.pocman_pos.x, pocstate.pocman_pos.y),
+			E_POWER))
+			pocstate.power_steps = power_num_steps_;
+		reward += reward_eat_food_;
+	}
+	reward *= step_weight;
+	pocstate.weight*=step_weight;
 	return false;
 }
 
@@ -616,9 +731,281 @@ void Pocman::MoveGhostRandom(PocmanState& pocstate, int g,
 		newpos = NextPos(pocstate.ghost_pos[g], dir);
 	} while (Compass::Opposite(dir) == pocstate.ghost_dir[g]
 		|| !(newpos.x >= 0 && newpos.y >= 0));
+
 	pocstate.ghost_pos[g] = newpos;
 	pocstate.ghost_dir[g] = dir;
 }
+
+
+double Pocman::ISMoveGhost(PocmanState& pocstate, int g, Random &random) const {
+	if (Coord::ManhattanDistance(pocstate.pocman_pos, pocstate.ghost_pos[g])
+		< ghost_range_) {
+		if (pocstate.power_steps > 0)
+			return ISMoveGhostDefensive(pocstate, g, random);
+		else
+			return ISMoveGhostAggressive(pocstate, g, random);
+	} 
+	else {
+		return ISMoveGhostRandom(pocstate, g, random);
+	}
+}
+
+double Pocman::ISMoveGhostAggressive(PocmanState& pocstate, int g,
+	Random &random) const {
+
+	int p_step_next = (pocstate.power_steps-1 > 0)? pocstate.power_steps-1:0;
+
+	//chase the agent
+	int bestDist = maze_.xsize() + maze_.ysize();
+	Coord bestPos = pocstate.ghost_pos[g];
+	int bestDir = -1;
+	for (int dir = 0; dir < 4; dir++) {
+		int dist = Coord::DirectionalDistance(pocstate.pocman_pos,
+			pocstate.ghost_pos[g], dir);
+		Coord newpos = NextPos(pocstate.ghost_pos[g], dir);
+		if (dist <= bestDist && newpos.x >= 0 && newpos.y >= 0
+			&& Compass::Opposite(dir) != pocstate.ghost_dir[g]) {
+			bestDist = dist;
+			bestPos = newpos;
+		}
+	}
+
+	int legal_next_pos_num=0;
+	double total_imp_move_prob=0;
+
+	for (int d=0; d<4; d++) {
+		Coord newpos = NextPos(pocstate.ghost_pos[g], d);
+		if(newpos.x >= 0 && newpos.y >= 0 &&
+			Compass::Opposite(d) != pocstate.ghost_dir[g])
+		{ //legal next position
+			total_imp_move_prob += sampling_weight_[p_step_next][Coord::ManhattanDistance(newpos, pocstate.pocman_pos)];
+
+			legal_next_pos_num++;
+		}
+	}
+
+	double importance_random_run_prob=(1-chase_prob_) * (total_imp_move_prob/legal_next_pos_num);
+	double importance_chase_prob=chase_prob_ * sampling_weight_[p_step_next][Coord::ManhattanDistance(bestPos, pocstate.pocman_pos)];
+
+	importance_chase_prob /= (importance_chase_prob+importance_random_run_prob);
+
+	if (random.NextDouble() > importance_chase_prob) { //move randomly
+		double weight=ISMoveGhostRandom(pocstate, g, random);
+		return weight*(1-chase_prob_)/(1.0-importance_chase_prob);
+	}
+
+	pocstate.ghost_pos[g] = bestPos;
+	pocstate.ghost_dir[g] = bestDir;
+
+	return chase_prob_/importance_chase_prob; 
+
+	//hand-crafted importance distribution
+	/*	double importance_chase_prob=0.9;
+	if (random.NextDouble() > importance_chase_prob) { //move randomly
+		double weight=ISMoveGhostRandom(pocstate, g, random);
+		return weight*(1-chase_prob_)/(1.0-importance_chase_prob);
+	}
+
+	//chase the agent
+	int bestDist = maze_.xsize() + maze_.ysize();
+	Coord bestPos = pocstate.ghost_pos[g];
+	int bestDir = -1;
+	for (int dir = 0; dir < 4; dir++) {
+		int dist = Coord::DirectionalDistance(pocstate.pocman_pos,
+			pocstate.ghost_pos[g], dir);
+		Coord newpos = NextPos(pocstate.ghost_pos[g], dir);
+		if (dist <= bestDist && newpos.x >= 0 && newpos.y >= 0
+			&& Compass::Opposite(dir) != pocstate.ghost_dir[g]) {
+			bestDist = dist;
+			bestPos = newpos;
+		}
+	}
+
+	pocstate.ghost_pos[g] = bestPos;
+	pocstate.ghost_dir[g] = bestDir;
+
+	return chase_prob_/importance_chase_prob; */
+}
+
+double Pocman::ISMoveGhostDefensive(PocmanState& pocstate, int g,
+	Random &random) const {
+
+	//run away
+	int bestDist = 0;
+	Coord bestPos = pocstate.ghost_pos[g];
+	int bestDir = -1;
+	for (int dir = 0; dir < 4; dir++) {
+		int dist = Coord::DirectionalDistance(pocstate.pocman_pos,
+			pocstate.ghost_pos[g], dir);
+		Coord newpos = NextPos(pocstate.ghost_pos[g], dir);
+		if (dist >= bestDist && newpos.x >= 0 && newpos.y >= 0
+			&& Compass::Opposite(dir) != pocstate.ghost_dir[g]) {
+			bestDist = dist;
+			bestPos = newpos;
+		}
+	}
+
+	int p_step_next = (pocstate.power_steps-1 > 0)? pocstate.power_steps-1:0;
+	double importance_defensive_slip = defensive_slip_ * sampling_weight_[p_step_next][Coord::ManhattanDistance(pocstate.ghost_pos[g], pocstate.pocman_pos)];
+	double importance_defensive_run_away = (1-defensive_slip_) * sampling_weight_[p_step_next][Coord::ManhattanDistance(bestPos, pocstate.pocman_pos)];
+
+	importance_defensive_slip /= (importance_defensive_slip + importance_defensive_run_away);
+
+	if (random.NextDouble() < importance_defensive_slip && pocstate.ghost_dir[g] >= 0) { //slip
+		pocstate.ghost_dir[g] = -1;
+		return defensive_slip_/importance_defensive_slip;
+	}
+
+	pocstate.ghost_pos[g] = bestPos;
+	pocstate.ghost_dir[g] = bestDir;
+
+	return (1.0-defensive_slip_)/(1.0-importance_defensive_slip); 
+
+	//hand-crafted importance distribution
+	/*	double importance_defensive_slip=0.5;
+	if (random.NextDouble() < importance_defensive_slip && pocstate.ghost_dir[g] >= 0) { //slip
+		pocstate.ghost_dir[g] = -1;
+		return defensive_slip_/importance_defensive_slip;
+	}
+
+	//run away
+	int bestDist = 0;
+	Coord bestPos = pocstate.ghost_pos[g];
+	int bestDir = -1;
+	for (int dir = 0; dir < 4; dir++) {
+		int dist = Coord::DirectionalDistance(pocstate.pocman_pos,
+			pocstate.ghost_pos[g], dir);
+		Coord newpos = NextPos(pocstate.ghost_pos[g], dir);
+		if (dist >= bestDist && newpos.x >= 0 && newpos.y >= 0
+			&& Compass::Opposite(dir) != pocstate.ghost_dir[g]) {
+			bestDist = dist;
+			bestPos = newpos;
+		}
+	}
+
+	pocstate.ghost_pos[g] = bestPos;
+	pocstate.ghost_dir[g] = bestDir;
+
+	return (1.0-defensive_slip_)/(1.0-importance_defensive_slip); */
+}
+
+double Pocman::ISMoveGhostRandom(PocmanState& pocstate, int g,
+	Random &random) const {
+	// Never switch to opposite direction
+	// Currently assumes there are no dead-ends.
+	
+	Coord newpos;
+	double move_prob[4];
+	double importance_move_prob[4];
+	double total_move_prob=0;
+	double total_imp_move_prob=0;
+
+	int p_step_next = (pocstate.power_steps-1 > 0)? pocstate.power_steps-1:0;
+	//calculate the probability of going to d (unormalized moving probability)
+	for (int d=0; d<4; d++) {
+		newpos = NextPos(pocstate.ghost_pos[g], d);
+		if(newpos.x >= 0 && newpos.y >= 0 &&
+			Compass::Opposite(d) != pocstate.ghost_dir[g])
+		{ //legal next position
+			move_prob[d]=1;
+			importance_move_prob[d]=sampling_weight_[p_step_next][Coord::ManhattanDistance(newpos, pocstate.pocman_pos)];
+		}
+		else{
+			move_prob[d]=0;
+			importance_move_prob[d]=0;
+		}
+
+		total_move_prob += move_prob[d];
+		total_imp_move_prob += importance_move_prob[d];
+	}
+	if(total_imp_move_prob==0 || total_move_prob==0){
+		cout<<"error: ISMoveGhostRandom()"<<endl;
+		return -1;
+	}
+	//normalize the probability
+	for (int d=0; d<4; d++) {
+		move_prob[d] /= total_move_prob;
+		importance_move_prob[d] /= total_imp_move_prob;
+	}
+
+	int dir;
+
+	do {
+		double rand_num;
+		rand_num=random.NextDouble();
+
+		if(rand_num<=importance_move_prob[0]) dir=0;
+		else if(rand_num<=importance_move_prob[0]+importance_move_prob[1]) dir=1;
+		else if(rand_num<=importance_move_prob[0]+importance_move_prob[1]
+			+importance_move_prob[2]) dir=2;
+		else dir=3;
+	} while (importance_move_prob[dir]==0);// this method still can sample the dir which has a 0 move prob; hence need to check here
+
+	newpos = NextPos(pocstate.ghost_pos[g], dir);
+	pocstate.ghost_pos[g] = newpos;
+	pocstate.ghost_dir[g] = dir;
+
+	return move_prob[dir]/importance_move_prob[dir]; 
+
+	//hand-crafted importance distribution
+	/*	Coord newpos;
+	double move_prob[4];
+	double importance_move_prob[4];
+	double total_move_prob=0;
+	double total_imp_move_prob=0;
+
+	//calculate the weight (unormalized moving probability for both original sampling and importance sampling)
+	for (int d=0; d<4; d++) {
+		newpos = NextPos(pocstate.ghost_pos[g], d);
+		if(newpos.x >= 0 && newpos.y >= 0 &&
+			Compass::Opposite(d) != pocstate.ghost_dir[g])
+		{ //legal next position
+			move_prob[d]=1;
+			total_move_prob+=move_prob[d];
+			if( Coord::ManhattanDistance(pocstate.ghost_pos[g], pocstate.pocman_pos) >
+				Coord::ManhattanDistance(newpos, pocstate.pocman_pos) ) //the new (next) position is closer to the agent
+				importance_move_prob[d]=2;
+			else importance_move_prob[d]=1;
+			total_imp_move_prob+=importance_move_prob[d];
+		}
+		else{
+			move_prob[d]=0;
+			importance_move_prob[d]=0;
+		}
+	}
+	if(total_imp_move_prob==0 || total_move_prob==0){
+		cout<<"error: ISMoveGhostRandom()"<<endl;
+		return -1;
+	}
+
+	//normalize the probability
+	for (int d=0; d<4; d++) {
+		move_prob[d] /= total_move_prob;
+		importance_move_prob[d] /= total_imp_move_prob;
+	}
+
+	int dir;
+
+	do {
+		double rand_num;
+		rand_num=random.NextDouble();
+
+		if(rand_num<=importance_move_prob[0]) dir=0;
+		else if(rand_num<=importance_move_prob[0]+importance_move_prob[1]) dir=1;
+		else if(rand_num<=importance_move_prob[0]+importance_move_prob[1]
+			+importance_move_prob[2]) dir=2;
+		else dir=3;
+
+	} while (importance_move_prob[dir]==0);// this method still can sample the dir which has a 0 move prob; hence need to check here
+
+
+	newpos = NextPos(pocstate.ghost_pos[g], dir);
+	pocstate.ghost_pos[g] = newpos;
+	pocstate.ghost_dir[g] = dir;
+
+	return move_prob[dir]/importance_move_prob[dir]; */
+}
+
 
 void Pocman::NewLevel(PocmanState& pocstate) const {
 	pocstate.pocman_pos = pocman_home_;
@@ -835,6 +1222,32 @@ void Pocman::PrintObs(const State& state, OBS_TYPE observation,
 	for (int x = 0; x < maze_.xsize() + 2; x++)
 		ostr << "# ";
 	ostr << endl;
+
+}
+
+vector<double> Pocman::Feature(const State& state) const {
+	vector<double> feature;
+	
+	if(Globals::config.collect_data == false) return feature;
+
+	const PocmanState& pocstate = static_cast<const PocmanState&>(state);
+	feature.push_back(pocstate.num_food);
+	feature.push_back(pocstate.power_steps);
+
+	vector<double> ghost_pocman_dist;
+	for (int g=0; g<4; g++)
+		ghost_pocman_dist.push_back(Coord::ManhattanDistance(pocstate.ghost_pos[g], pocstate.pocman_pos));
+	std::sort (ghost_pocman_dist.begin(), ghost_pocman_dist.end());
+
+	//this is for the case that some ghost is eaten by pocman
+	while(ghost_pocman_dist.size()<4) ghost_pocman_dist.push_back(40);
+
+	for (int i = 0; i < ghost_pocman_dist.size(); ++i)
+	{
+		feature.push_back(ghost_pocman_dist.at(i));
+	}
+
+	return feature;
 }
 
 void Pocman::PrintBelief(const Belief& belief, ostream& out) const {
@@ -882,6 +1295,75 @@ void Pocman::Free(State* particle) const {
 
 int Pocman::NumActiveParticles() const {
 	return memory_pool_.num_allocated();
+}
+
+vector<double> Pocman::ImportanceWeight(vector<State*> particles) const
+{
+	double total_weight=State::Weight(particles);
+	double sum_of_weight=0;
+	
+	int particles_num=particles.size();
+	vector<PocmanState*> pocman_particles;
+	vector <double> importance_weight;
+	for(int i=0; i<particles_num;i++){
+		pocman_particles.push_back(static_cast<PocmanState*>(particles[i]));
+	}
+
+	for(int i=0; i<particles_num;i++){
+		int min_dist = 100;
+		for (int g=0; g<4; g++){
+			double dist_to_ghost;
+			dist_to_ghost = Coord::ManhattanDistance(pocman_particles[i]->ghost_pos[g], pocman_particles[i]->pocman_pos);
+			if(dist_to_ghost < min_dist) min_dist = dist_to_ghost;
+		}
+		int p_step = pocman_particles[i]->power_steps;
+		importance_weight.push_back(pocman_particles[i]->weight * sampling_weight_[p_step][min_dist]);
+		sum_of_weight += importance_weight[i];
+	}
+
+	//normalize
+	for(int i=0; i<particles_num;i++){
+		importance_weight[i] = importance_weight[i]*total_weight/sum_of_weight;
+	}
+
+	return importance_weight;
+
+	//hand-crafted importance distribution for sampling initial belief
+	/*	double total_weight=State::Weight(particles);
+	double sum_of_weight=0;
+	
+	int particles_num=particles.size();
+	vector<PocmanState*> pocman_particles;
+	vector <double> importance_weight;
+	for(int i=0; i<particles_num;i++){
+		pocman_particles.push_back(static_cast<PocmanState*>(particles[i]));
+	}
+
+	for(int i=0; i<particles_num;i++){
+		int min_dist = 100;
+		for (int g=0; g<4; g++){
+			double dist_to_ghost;
+			dist_to_ghost = Coord::ManhattanDistance(pocman_particles[i]->ghost_pos[g], pocman_particles[i]->pocman_pos);
+			if(dist_to_ghost < min_dist) min_dist = dist_to_ghost;
+		}
+		switch(min_dist){
+			case 1: importance_weight.push_back(pocman_particles[i]->weight * 10); break;
+			case 2: importance_weight.push_back(pocman_particles[i]->weight * 8); break;
+			case 3: importance_weight.push_back(pocman_particles[i]->weight * 6); break;
+			case 4: importance_weight.push_back(pocman_particles[i]->weight * 4); break;
+			case 5: importance_weight.push_back(pocman_particles[i]->weight * 2); break;
+			default: importance_weight.push_back(pocman_particles[i]->weight); break;
+		}
+		sum_of_weight += importance_weight[i];
+	}
+
+	//normalize
+	for(int i=0; i<particles_num;i++){
+		importance_weight[i] = importance_weight[i]*total_weight/sum_of_weight;
+	}
+
+	return importance_weight;*/
+
 }
 
 } // namespace despot

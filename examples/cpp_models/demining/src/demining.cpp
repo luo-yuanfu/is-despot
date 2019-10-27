@@ -7,7 +7,7 @@ Demining::Demining()
 	start_state_=NULL;
 
 	if(Globals::config.use_is_despot == false){
-		cout<<"no-importance-sampling is set; don't use importance sampling"<<endl;
+		cout<<"use_is_despot is set to false; will not use importance sampling"<<endl;
 		for(int i=0; i<MAX_MINE_NUM; i++)
 			for(int j=0; j<MAX_DIST_ARRAY_SIZE; j++)
 				sampling_weight_[i][j]=1;
@@ -18,7 +18,7 @@ Demining::Demining()
 	file.open("sampling_weight.dat", std::ifstream::in);
 	if(file.fail()){
 		cout<<"fail to open sampling_weight.dat file"<<endl;
-		cout<<"don't use importance sampling"<<endl;
+		cout<<"will not use importance sampling"<<endl;
 		for(int i=0; i<MAX_MINE_NUM; i++)
 			for(int j=0; j<MAX_DIST_ARRAY_SIZE; j++)
 				sampling_weight_[i][j]=1;
@@ -490,7 +490,7 @@ Demining::~Demining()
  void Demining::PrintObs(const State &state, OBS_TYPE obs, ostream &out)  const
  {
 	return;
- 	const DeminingState& demining_state = static_cast<const DeminingState &>(state);
+ 	//const DeminingState& demining_state = static_cast<const DeminingState &>(state);
  	char neighbor_cell[3][3];
 
  	for(int i=0; i<3; i++)
