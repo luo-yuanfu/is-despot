@@ -2,13 +2,13 @@
 
 [Copyright &copy; 2014-2018 by National University of Singapore](http://motion.comp.nus.edu.sg/).
 
-APPL Online is a C++ implementation of the DESPOT algorithm for online POMDP planning [1]. It takes as input a POMDP model in the POMDPX file format. It also provides an API for interfacing directly with a blackbox simulator. 
+APPL Online is a C++ implementation of the DESPOT algorithm for online POMDP planning [1] [2]. It takes as input a POMDP model in the POMDPX file format. It also provides an API for interfacing directly with a blackbox simulator. 
 
 For bug reports and suggestions, please email <motion@comp.nus.edu.sg>.
 
-[1] N. Ye, A. Somani, D. Hsu, and W. Lee. [**DESPOT: Online POMDP planning with regularization**](http://bigbird.comp.nus.edu.sg/m2ap/wordpress/wp-content/uploads/2017/08/jair14.pdf). J. Artificial Intelligence Research, 58:231–266, 2017.
+[1] Luo, Y., Bai, H., Hsu, D., & Lee, W. S. (2019). [**Importance sampling for online planning under uncertainty**](https://journals.sagepub.com/doi/full/10.1177/0278364918780322). The International Journal of Robotics Research, 38(2–3), 162–181. 
 
-
+[2] Luo, Y., Bai, H., Hsu, D., & Lee, W. S. (2016). [**Importance sampling for online planning under uncertainty**](https://motion.comp.nus.edu.sg/2018/04/23/online-pomdp-planning/). In Algorithmic Foundations of Robotics XII – Proc. Int. Workshop on the Algorithmic Foundations of Robotics (WAFR). 2016.
 
 ## Table of Contents
 
