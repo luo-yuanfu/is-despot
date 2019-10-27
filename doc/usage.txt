@@ -32,3 +32,10 @@ COMMAND LINE OPTIONS
           --silence                  Reduce default output to minimal.
           --noise <arg>              Noise level for transition in POMDPX belief
                                      update.
+          --use_is_despot <arg>      Use importance sampling or not. (default is
+                                     true)
+          --use_normalization <arg>  Use normalization for importance
+                                     distribution or not. (default is true)
+          --collect_data <arg>       Collect data for learning importance
+                                     distribution or not. (default is false)
+
