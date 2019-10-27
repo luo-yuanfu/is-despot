@@ -1,4 +1,4 @@
-# Approximate POMDP Planning Online (APPL Online) Toolkit
+# IMPORTANCE SAMPLING FOR ONLINE PLANNING UNDER UNCERTAINTY
 
 [Copyright &copy; 2014-2019 by National University of Singapore](http://motion.comp.nus.edu.sg/).
 
