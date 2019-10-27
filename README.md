@@ -1,8 +1,8 @@
 # Approximate POMDP Planning Online (APPL Online) Toolkit
 
-[Copyright &copy; 2014-2018 by National University of Singapore](http://motion.comp.nus.edu.sg/).
+[Copyright &copy; 2014-2019 by National University of Singapore](http://motion.comp.nus.edu.sg/).
 
-APPL Online is a C++ implementation of the DESPOT algorithm for online POMDP planning [1], [2]. It takes as input a POMDP model in the POMDPX file format. It also provides an API for interfacing directly with a blackbox simulator. 
+APPL Online is a C++ implementation of the IS-DESPOT algorithm for online POMDP planning [1], [2]. It takes as input a POMDP model specified by a C++ API for interfacing directly with a blackbox simulator. 
 
 For bug reports and suggestions, please email <yuanfu@comp.nus.edu.sg>.
 
