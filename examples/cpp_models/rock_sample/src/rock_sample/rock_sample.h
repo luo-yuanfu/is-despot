@@ -7,6 +7,7 @@
 #include <despot/util/coord.h>
 #include <despot/util/grid.h>
 
+using namespace std;
 namespace despot {
 
 /* =============================================================================
@@ -24,6 +25,10 @@ public:
 	double ObsProb(OBS_TYPE obs, const State& state, ACT_TYPE action) const;
 	void PrintObs(const State& state, OBS_TYPE observation,
 		std::ostream& out = std::cout) const;
+	vector<double> Feature(const State& state) const;
+
+	vector<double> ImportanceWeight(vector<State*> particles) const;
+	vector<vector<vector<double> > > sampling_weight_;
 };
 
 } // namespace despot
