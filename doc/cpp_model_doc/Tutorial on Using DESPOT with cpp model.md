@@ -1,7 +1,7 @@
 # Tutorial on Using IS-DESPOT
 
 ## 0. Before Reading
-IS-DESPOT uses the same API with DESPOT. In the following, we will first provide the tutorial on using DESPOT ([Section 2](#2-defining-a-pomdp-model), [Section 3](#3-creating-a-world), and [Section 4](#4-running-the-planning)), and then introduce the new features in IS-DESPOT and the steps needed to use IS-DESPOT. 
+IS-DESPOT uses the same API with DESPOT. In the following, we will first provide the tutorial on using DESPOT ([Section 2](#2-defining-a-pomdp-model), [Section 3](#3-creating-a-world), and [Section 4](#4-running-the-planning)), and then introduce the new features in IS-DESPOT and the steps needed to use IS-DESPOT ([section 5](#5-using-importance-sampling)). 
 
 ## 1. Overview
 
@@ -700,7 +700,11 @@ int main(int argc, char* argv[]) {
 ```
  Check "[despot/planner.h](../../include/despot/planner.h)" for implementation details of the `Planner` class.
 
-## 5. References
+## 5. Using Importance Sampling
+
+There are three new features in IS-DESPOT.
+
+## 6. References
 
 [1] A. Somani and N. Ye and D. Hsu and W.S. Lee. DESPOT: Online POMDP Planning with Regularization. In Advances In Neural Information Processing Systems, 2013.
 
