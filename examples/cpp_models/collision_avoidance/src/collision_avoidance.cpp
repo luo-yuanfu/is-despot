@@ -176,10 +176,10 @@ CollisionAvoidance::~CollisionAvoidance()
 		}
 	}
 
-	if( random_num < PROB_UP){
+	if( random.NextDouble() < PROB_UP){
 		if(world_state.obstacle_height+1<MAP_HEIGHT) world_state.obstacle_height++;
 	}
-	else if(random_num < PROB_UP + PROB_DOWN) {
+	else if(random.NextDouble() < PROB_UP + PROB_DOWN) {
 		if(world_state.obstacle_height-1>=0) world_state.obstacle_height--;
 	}
 	else {
@@ -206,7 +206,7 @@ CollisionAvoidance::~CollisionAvoidance()
  	WorldState& world_state = static_cast<WorldState&>(s);
 
  	reward=0;
- 	double prob_up, prob_down, prob_horizon;
+ 	double prob_up, prob_down, prob_not_move;
 
  	switch(action)
  	{
@@ -284,32 +284,32 @@ CollisionAvoidance::~CollisionAvoidance()
 	prob_down=sampling_weight_[world_state.distance][int(abs(obst_height  - world_state.aircraft_height ))]*PROB_DOWN;
 
 	obst_height = world_state.obstacle_height;
-	prob_horizon=sampling_weight_[world_state.distance][int(abs(obst_height  - world_state.aircraft_height ))]*PROB_NOT_MOVE;
+	prob_not_move=sampling_weight_[world_state.distance][int(abs(obst_height  - world_state.aircraft_height ))]*PROB_NOT_MOVE;
 
 	double total_prob;
-	total_prob=prob_up+prob_down+prob_horizon;
+	total_prob=prob_up+prob_down+prob_not_move;
 	prob_up /= total_prob;
 	prob_down /= total_prob;
-	prob_horizon /= total_prob;
+	prob_not_move /= total_prob;
 
 //hand-crafted importance distribution
 /*	if(world_state.obstacle_height < world_state.aircraft_height){
  		prob_up=0.762;
  		prob_down=0.048;
- 		prob_horizon=0.190;
+ 		prob_not_move=0.190;
   	}
   	else if(world_state.obstacle_height == world_state.aircraft_height){
  		prob_up=0.1665;
  		prob_down=0.1665;
- 		prob_horizon=0.667;
+ 		prob_not_move=0.667;
   	}
   	else{
  		prob_up=0.048;
  		prob_down=0.762;
- 		prob_horizon=0.190;
+ 		prob_not_move=0.190;
   	}*/
 
-	if( random_num < prob_up){
+	if( random.NextDouble() < prob_up){
 		if(world_state.obstacle_height+1<MAP_HEIGHT) world_state.obstacle_height++;
 		world_state.weight *= (PROB_UP/prob_up);
 		if(world_state.distance==0)
@@ -321,7 +321,7 @@ CollisionAvoidance::~CollisionAvoidance()
 			return true;
 		}
 	}
-	else if(random_num < prob_up + prob_down) {
+	else if(random.NextDouble() < prob_up + prob_down) {
 		if(world_state.obstacle_height-1>=0) world_state.obstacle_height--;
 		world_state.weight *= (PROB_DOWN/prob_down);
 		if(world_state.distance==0)
@@ -334,11 +334,11 @@ CollisionAvoidance::~CollisionAvoidance()
 		}
 	}
 	else {
-		world_state.weight *= (PROB_NOT_MOVE/prob_horizon);
+		world_state.weight *= (PROB_NOT_MOVE/prob_not_move);
 		if(world_state.distance==0)
 		{
 			if(world_state.aircraft_height == world_state.obstacle_height)
-				reward += PENALTY_COLLISION * (PROB_NOT_MOVE/prob_horizon);
+				reward += PENALTY_COLLISION * (PROB_NOT_MOVE/prob_not_move);
 			else reward += 0;
 			obs = GetObs(world_state, random);
 			return true;
