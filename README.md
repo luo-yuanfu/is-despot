@@ -17,7 +17,7 @@ For bug reports and suggestions, please email <yuanfu@comp.nus.edu.sg>.
 * [Installation](#installation)
 * [Quick Start](#quick-start)
 * [Documentation](#documentation)
-* [Using IS-DESPOT with External Systems](#using-despot-with-external-systems)
+* [Using IS-DESPOT with External Systems](#using-is-despot-with-external-systems)
 * [Package Contents](#package-contents)
 * [CMakeLists](#cmakelists)
 * [Acknowledgements](#acknowledgements)
