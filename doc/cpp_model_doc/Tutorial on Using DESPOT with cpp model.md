@@ -702,7 +702,15 @@ int main(int argc, char* argv[]) {
 
 ## 5. Using Importance Sampling
 
-There are three new features in IS-DESPOT API. The first one is the `ImportanceSamplingStep` function in which importance sampling for transition is implemented. The second one is the `ImportanceWeight` function in which importance sampling for initial belief is implemented. The third one the `Feature` function which helps for learning importance distribution.
+There are three new features in IS-DESPOT API. The first one is the `ImportanceSamplingStep` function in which importance sampling for transition is implemented. The second one is the `ImportanceWeight` function in which importance sampling for initial belief is implemented. The third one the `Feature` function which helps for learning importance distribution. We illustrate them one by one in the following.
+
+### 5.1. Importance Sampling for Transition
+
+`ImportanceSamplingStep` function implements the deterministic simulative model but with importance sampling. In the original determinisitc simulative model (`Step` function), the next state is sampled according to the original transition function `p`. In the `ImportanceSamplingStep` function, one can sample the next state `s` by his/her designed importance function `q`, but the weight of the sampled state `s` should be multiplied by `p(s)/q(s)`.
+
+### 5.2. Importance Sampling for Initial Belief
+
+### 5.3 Learning the Importance Distribution
 
 ## 6. References
 
