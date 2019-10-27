@@ -2,9 +2,9 @@
 
 [Copyright &copy; 2014-2018 by National University of Singapore](http://motion.comp.nus.edu.sg/).
 
-APPL Online is a C++ implementation of the DESPOT algorithm for online POMDP planning [1] [2]. It takes as input a POMDP model in the POMDPX file format. It also provides an API for interfacing directly with a blackbox simulator. 
+APPL Online is a C++ implementation of the DESPOT algorithm for online POMDP planning [1], [2]. It takes as input a POMDP model in the POMDPX file format. It also provides an API for interfacing directly with a blackbox simulator. 
 
-For bug reports and suggestions, please email <motion@comp.nus.edu.sg>.
+For bug reports and suggestions, please email <yuanfu@comp.nus.edu.sg>.
 
 [1] Luo, Y., Bai, H., Hsu, D., & Lee, W. S. (2019). [**Importance sampling for online planning under uncertainty**](https://journals.sagepub.com/doi/full/10.1177/0278364918780322). The International Journal of Robotics Research, 38(2–3), 162–181. 
 
@@ -17,7 +17,7 @@ For bug reports and suggestions, please email <motion@comp.nus.edu.sg>.
 * [Installation](#installation)
 * [Quick Start](#quick-start)
 * [Documentation](#documentation)
-* [Using DESPOT with External Systems](#using-despot-with-external-systems)
+* [Using IS-DESPOT with External Systems](#using-despot-with-external-systems)
 * [Package Contents](#package-contents)
 * [CMakeLists](#cmakelists)
 * [Acknowledgements](#acknowledgements)
@@ -44,15 +44,15 @@ Tested Hardware: Intel Core i7 CPU, 2.0 GB RAM
 
 Clone the repository from Github (**Recommended**):
 ```bash
-$ git clone https://github.com/AdaCompNUS/despot.git
+$ git clone https://github.com/luo-yuanfu/is-despot.git
 ```
-OR manually download the [Zip Files](https://github.com/AdaCompNUS/despot/archive/master.zip). For instructions, use this online Github README. 
+OR manually download the [Zip Files](https://github.com/luo-yuanfu/is-despot/archive/master.zip). For instructions, use this online Github README. 
 
 ## Installation
 
 Compile using `make`:
 ```bash
-$ cd despot
+$ cd is-despot
 $ make
 ```
 
@@ -60,31 +60,17 @@ $ make
 
 ## Quick Start
 
-DESPOT can be used to solve a POMDP specified in the **POMDPX** format or a POMDP
-specified in **C++** according to the API. We illustrate this on the [Tiger](http://people.csail.mit.edu/lpk/papers/aij98-pomdp.pdf) problem.
+IS-DESPOT can be used to solve a POMDP specified in **C++** according to the API. We will illustrate this on the [Asymmetric Tiger](https://bigbird.comp.nus.edu.sg/m2ap/wordpress/wp-content/uploads/2017/01/wafr16a.pdf) problem.
 
-
-1.To run Tiger specified in [POMDPX format](http://bigbird.comp.nus.edu.sg/pmwiki/farm/appl/index.php?n=Main.PomdpXDocumentation.), compile and run:
-
+To run Asymmetric Tiger specified in [C++](doc/cpp_model_doc), compile and run: 
 ```bash
-$ cd despot/examples/pomdpx_models
-$ make
-$ ./pomdpx -m ./data/Tiger.pomdpx --runs 2 
-```
-
-This command computes and simulates DESPOT's policy for `N = 2` runs and reports the
-performance for the tiger problem specified in POMDPX format. See [doc/Usage.txt](doc/usage.txt) for 
-more options. For more details on the POMPDX format, see [this page](http://bigbird.comp.nus.edu.sg/pmwiki/farm/appl/index.php?n=Main.PomdpXDocumentation.)
-
-2.To run Tiger specified in [C++](doc/cpp_model_doc), compile and run: 
-```bash
-$ cd despot/examples/cpp_models/tiger
+$ cd is-despot/examples/cpp_models/asymmetric_tiger
 $ make
 $ ./tiger --runs 2
 ```
 
-This command computes and simulates DESPOT's policy for `N = 2` runs and reports the
-performance for the tiger problem specified in C++. See [doc/Usage.txt](doc/usage.txt) for more options.
+This command computes and simulates IS-DESPOT's policy for `N = 2` runs and reports the
+performance for the Asymmetric Tiger problem specified in C++. See [doc/Usage.txt](doc/usage.txt) for more options.
 
 
 ## Documentation
@@ -93,9 +79,9 @@ Documentation can be found in the "[doc](doc/)" directory.
 
 For a description of our example domains and more POMDP problems see [the POMDP page](http://www.pomdp.org/examples/).
 
-## Using DESPOT with External Systems
+## Using IS-DESPOT with External Systems
 
-An example of integrating DESPOT with an external Gazebo simulator can be found in [the DESPOT tutorials page](https://github.com/AdaCompNUS/despot_tutorials.git).
+Like DESPOT, IS-DESPOT can be used with external systems. An example of integrating DESPOT with an external Gazebo simulator can be found in [the DESPOT tutorials page](https://github.com/AdaCompNUS/despot_tutorials.git). To use IS-DESPOT with external systems, follow the instruction there and replace the despot package with this is-despot package. Note that you also need to specify the importance distribution to use IS-DESPOT.
 
 ## Package Contents
 
@@ -120,18 +106,18 @@ doc/eclipse_guide.md      Guide for using Eclipse IDE for development
 
 **(Optional)**
 
-If you are interested in integrating DESPOT into an existing CMake project or using an IDE for editing, we provide a [CMakeLists.txt](CMakeLists.txt).
+If you are interested in integrating IS-DESPOT into an existing CMake project or using an IDE for editing, we provide a [CMakeLists.txt](CMakeLists.txt).
 
-To install DESPOT libraries and header files into your system directory:
+To install IS-DESPOT libraries and header files into your system directory:
 ```bash
-$ cd despot
+$ cd is-despot
 $ mkdir build; cd build
 $ cmake ../
 $ make
 $ sudo make install
 ```
 
-To integrate DESPOT into your project, add this to your `CMakeLists.txt` file:
+To integrate IS-DESPOT into your project, add this to your `CMakeLists.txt` file:
 
 ```CMake
 find_package(Despot CONFIG REQUIRED)
@@ -147,16 +133,14 @@ target_link_libraries("YOUR_PROJECT_NAME"
 
 ## Acknowledgements
 
-Pocman implementation and memorypool.h in the package are based on David
-Silver's [POMCP code](http://www0.cs.ucl.ac.uk/staff/D.Silver/web/Applications.html)
+The package is implemented based on [DESPOT code](https://github.com/AdaCompNUS/despot).
+Pocman implementation and memorypool.h in the package are based on David Silver's [POMCP code](http://www0.cs.ucl.ac.uk/staff/D.Silver/web/Applications.html)
 
 ## Bugs and Suggestions
 Please use the issue tracker.
 
 ## Release Notes
-2015/09/28 Initial release.
+2016/07/23 Initial release.
 
-2017/03/07 Public release. Revised documentation.
-
-2018/09/20 New API release.
+2019/10/27 Public release.
 
