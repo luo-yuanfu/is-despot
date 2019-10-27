@@ -1,7 +1,7 @@
 # Tutorial on Using IS-DESPOT
 
 ## 0. Before Reading
-IS-DESPOT uses the same API with DESPOT. In the following, we will first provide the tutorial on using DESPOT ([Section 2](#2-defining-a-pomdp-model), [Section 3](#3-creating-a-world), and [Section 4](#4-running-the-planning)), and then introduce the new features in IS-DESPOT and the steps needed to use IS-DESPOT ([section 5](#5-using-importance-sampling)). 
+IS-DESPOT uses the same API with DESPOT. In the following, we will first provide the tutorial on using DESPOT ([Section 2](#2-defining-a-pomdp-model), [Section 3](#3-creating-a-world), and [Section 4](#4-running-the-planning)), and then introduce the new features in IS-DESPOT and the steps needed to use IS-DESPOT ([Section 5](#5-using-importance-sampling)). 
 
 ## 1. Overview
 
@@ -702,7 +702,7 @@ int main(int argc, char* argv[]) {
 
 ## 5. Using Importance Sampling
 
-There are three new features in IS-DESPOT.
+There are three new features in IS-DESPOT API. The first one is the `ImportanceSamplingStep` function in which importance sampling for transition is implemented. The second one is the `ImportanceWeight` function in which importance sampling for initial belief is implemented. The third one the `Feature` function which helps for learning importance distribution.
 
 ## 6. References
 
@@ -715,3 +715,7 @@ There are three new features in IS-DESPOT.
 [4] Silver, D., Veness, J.: Monte-Carlo planning in large POMDPs. In: Advances in Neural Information Processing Systems (NIPS) (2010).
 
 [5] J. Pineau, G. Gordon, and S. Thrun. Point-based value iteration: An anytime algorithm for POMDPs. In Proc. Int. Jnt. Conf. on Artificial Intelligence, pages 477-484, 2003.
+
+[6] Luo, Y., Bai, H., Hsu, D., & Lee, W. S. (2019). Importance sampling for online planning under uncertainty. The International Journal of Robotics Research, 38(2–3), 162–181.
+
+[7] Luo, Y., Bai, H., Hsu, D., & Lee, W. S. (2016). Importance sampling for online planning under uncertainty. In Algorithmic Foundations of Robotics XII – Proc. Int. Workshop on the Algorithmic Foundations of Robotics (WAFR). 2016.
