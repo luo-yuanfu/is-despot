@@ -1,4 +1,7 @@
-# Tutorial on Using DESPOT
+# Tutorial on Using IS-DESPOT
+
+## 0. Before Reading
+IS-DESPOT uses the same API with DESPOT. In the following, we will first provide the tutorial on using DESPOT, and then introduce the new features in IS-DESPOT and the steps needed to use IS-DESPOT. 
 
 ## 1. Overview
 
